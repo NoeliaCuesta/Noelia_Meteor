@@ -1,0 +1,45 @@
+#header{
+  background-color:black;
+  text-align: center;
+  color: white;
+}
+
+body{
+  background-color: #f7f7f7 ;
+}
+
+
+
+#selectors{
+  background-color: #f7f7f7;
+}
+
+#tabla{
+  text-align: left;
+  border: 1px solid black;
+}
+
+#tabla2{
+  text-align: left;
+  border-top:  1px solid black;
+}
+
+
+#desconectar{
+  float: right;
+}
+
+
+#table, th, td{
+  border: 1px solid black;
+
+    border-collapse: collapse;
+}
+
+#chart{
+  align-items: center;
+}
+
+
+
+}

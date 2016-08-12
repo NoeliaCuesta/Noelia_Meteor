@@ -1,0 +1,17 @@
+{
+  "name": "myApp",
+  "version": "1.0.0",
+  "description": "Monitorizacion de sistemas IoT",
+  "author": "Noelia Cuesta <noelia.cuesta@edu.uah.es>",
+  "main": "server.js",
+  "dependencies": {
+    "alasql": "^0.2.4",
+    "body-parser": "~1.0.1",
+    "express": "~4.0.0",
+    "mongo-oplog": "^1.0.1",
+    "mongoose": "~3.6.13",
+    "mongoose-connect": "0.0.3",
+    "ng-csv": "^0.3.6",
+    "socket.io": "^1.4.5"
+  }
+}

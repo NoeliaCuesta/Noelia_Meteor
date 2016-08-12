@@ -1,0 +1,313 @@
+<!DOCTYPE>
+<html ng-app="myApp">
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <!--Para definir las caracteristicas del mapa de google-->
+  <style>
+    #map-canvas{
+      height: 500px;
+      width: 1200px;
+      border: 2px solid black;
+    }
+  </style>
+
+  <title>Monitorizacion de Sondas</title>
+
+</head>
+<body>
+    <div class="container" ng-controller="addCtrl">
+
+      <div id="header" class="header_bar">
+        <h1>Monitorizacion de Sondas
+        <!--<a id="shutdown" href="#"><img src="assets/img/shutdown.png" alt="Shut Down Icon" style="float:rigth;width:40px;height:40px;"></a>--></h1>
+      </div>
+
+
+
+    <div>&nbsp;</div>
+    <h3>Número total de sondas: {{sondas.length}}</h3>
+
+    <div class="row">
+    <div class="col-md-9" id="chart" chart align="center"></div>
+
+    <!--Aqui mostraremos en un resumen el numero de sondas conectadas segun su conexion-->
+    <div class="hchild" id="resultados_legenda" >
+      <div class="col-md-3" id="legend">
+        <div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div><div>&nbsp;</div>
+        <div class="legend green" style="color:27D04C"><strong>Todo Conectado - ON</strong> &#8594; {{numSondasGreen}} sondas</div>
+        <div class="legend_f green"></div>
+        <div class="legend yellow" style="color:EFBF10"><strong>Solo WiFi o Ethernet</strong> &#8594; {{numSondasYellow}} sondas</div>
+        <div class="legend_f yellow"></div>
+        <div class="legend red" style="color:EA051B"><strong>No conectadas - OFF</strong> &#8594; {{numSondasRed}} sondas</div>
+        <div class="legend_f red"></div>
+      </div>
+    </div>
+  </div>
+    <div>&nbsp;</div>
+
+
+    <div class="container">
+      <section ng-init="tab=1">
+        <ul class="nav nav-tabs nav-justified">
+          <!--Para crear las pestañas {active:tab.isSet(1)}-->
+          <li role="presentation" ng-class={active:tab.isSet(1)}><a style="font-size:14pt;font-family:Comic Sans, cursive;color:4B24E7" href="#" ng-click="tab=1">Vista Sencilla</a></li>
+          <li role="presentation" ng-class={active:tab.isSet(2)}><a style="font-size:14pt;font-family:Comic Sans, cursive;color:4B24E7" href="#" ng-click="tab=2">Vista Compleja</a></li>
+          <li role="presentation" ng-class={active:tab.isSet(3)}><a style="font-size:14pt;font-family:Comic Sans, cursive;color:4B24E7" href="#" ng-click="tab=3">Mapa</a></li>
+        </ul>
+        <!--En la primera pestaña mostramos los datos simples de cada sonda-->
+          <div class="panel" ng-show="tab===1">
+
+            <div class="hchild" id="selectors">
+              <div>&nbsp;</div>
+              <!--Para filtar segun su conexion a wifi y ethernet-->
+              <div class="options">
+                <span style="font-size:14pt;font-family:Verdana, Helvetica">Filtrar por...</span>
+                <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtros" ng-model="filtroSeleccionado" ng-change="filtroGlobal()" class="js-example-basic-single">
+                </select>
+              </div>
+
+              <!--Para filtrar por pais-->
+              <div>&nbsp;</div>
+              <div class="options" >
+        	     <span style="font-size:14pt;font-family:Verdana, Helvetica">Filtrar por Pais</span>
+               <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtrosPais" ng-model="filtroSeleccionadoP" ng-change="filtroGlobal()" class="js-example-basic-single">
+               </select>
+                  &nbsp;&nbsp;
+
+                <!--Para filtrar por campaña-->
+        	     <span style="font-size:14pt;font-family:Verdana, Helvetica">Filtrar por Campaña</span>
+               <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtrosCampana" ng-model="filtroSeleccionadoC" ng-change="filtroGlobal()" class="js-example-basic-single">
+               </select>
+               &nbsp;&nbsp;
+
+               <!--Para filtrar por usuarios de feebbo-->
+               <span style="font-size:14pt;font-family:Verdana, Helvetica">Feebbo</span>
+               <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtrosFeebbo" ng-model="filtroSeleccionadoF" ng-change="filtroGlobal()" class="js-example-basic-single">
+               </select>
+        			</div>
+
+              <!--Para ordenar por los campos correspondientes-->
+              <div>&nbsp;</div>
+              <div class="options">
+                <span style="font-size:14pt;font-family:Verdana, Helvetica">Ordenar por...</span>
+                <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtrosOrdenar" ng-model="filtroSeleccionadoO" class="js-example-basic-single">
+                </select>
+              </div>
+
+              <div>&nbsp;</div>
+
+              <!--Cuadro de texto para el filtro-->
+              <input style="font-size:12pt;font-family:Verdana, Helvetica"  type="text" placeholder="Buscar por..." ng-model="searchText" ng-change="cambioTexto()">
+              <div>&nbsp;</div>
+
+              <!--Boton para exportar a un excel-->
+              <button type="button" class="btn btn-primary" id="botonCSV"  ng-csv="getData()" filename="Estado_Sondas.csv" csv-header="getHeader()" >Exportar a CSV</button>
+              <div>&nbsp;</div>
+
+            </div>
+            <!--Contenido de la primera pestaña-->
+            <div ng-repeat="sonda in sondas | filter:filtroPersonalizado | orderBy: filtroSeleccionadoO">
+              <div id="tabla" class="table table-hover" layout-align="start end">
+                <div><strong>Id Sonda:</strong><a ng-href="http://medux.caseonit.net/test_analysis.html?probe={{sonda.id_sonda}}&fijo=1" target="_blank"> {{sonda.id_sonda}}</a></div>
+                <div><strong>Id Usuario:</strong> {{sonda.id_user}}</div>
+                <div><strong>Nombre:</strong> {{sonda.user_name}} {{sonda.user_surname}}</div>
+                <div><strong>Telefóno:</strong> {{sonda.phone}}</div>
+                <div><strong>Dirección:</strong> {{sonda.address}}, C.P.: {{sonda.cp}} - {{sonda.poblacion}}, {{sonda.provincia}}</div>
+                <div><strong>Operador:</strong> {{sonda.fijo | capitalize}} {{sonda.tipo_acceso | capitalize}}</div>
+                <div><strong>País: </strong> {{sonda.pais | capitalize}}</div>
+                <div ng-if="(sonda.WIFI==='ON' && sonda.ETHERNET==='ON')" style="color:23F02D;"><strong>WIFI:</strong> {{sonda.WIFI}} <strong>ETHERNET: </strong>{{sonda.ETHERNET}} </div>
+                <div ng-if="(sonda.WIFI==='OFF' && sonda.ETHERNET==='ON')" style="color:E8FF1C;"><strong>WIFI:</strong> {{sonda.WIFI}} <strong>ETHERNET: </strong>{{sonda.ETHERNET}} </div>
+                <div ng-if="(sonda.WIFI==='ON' && sonda.ETHERNET==='OFF')" style="color:E8FF1C;"><strong>WIFI:</strong> {{sonda.WIFI}} <strong>ETHERNET: </strong>{{sonda.ETHERNET}} </div>
+                <div ng-if="(sonda.WIFI==='OFF' && sonda.ETHERNET==='OFF')" style="color:red;"><strong>WIFI:</strong> {{sonda.WIFI}} <strong>ETHERNET: </strong>{{sonda.ETHERNET}} </div>
+                <div ng-if="sonda.tiempoDesconectada > 3"><strong>Tiempo desconectada:</strong> {{sonda.tiempoDesconectada | number: 2 }} días</div>
+                <div align="right"><strong>PORCENTAJE DE ESTE MES </strong> {{sonda.porcentajeConectada}} %</div>
+
+                <div class="progress">
+                  <div ng-if="sonda.porcentajeConectada > 70" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="sonda.porcentajeConectada" aria-valuemin="0" aria-valuemax="100" style="width: {{sonda.porcentajeConectada}}%">
+                    {{sonda.porcentajeConectada}} %
+                  </div>
+
+                  <div ng-if="sonda.porcentajeConectada <= 70 && sonda.porcentajeConectada > 50" class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="sonda.porcentajeConectada" aria-valuemin="0" aria-valuemax="100" style="width: {{sonda.porcentajeConectada}}%">
+                    {{sonda.porcentajeConectada}} %
+                  </div>
+
+                  <div ng-if="sonda.porcentajeConectada <= 50" class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="sonda.porcentajeConectada" aria-valuemin="0" aria-valuemax="100" style="width: {{sonda.porcentajeConectada}}%">
+                    {{sonda.porcentajeConectada}} %
+                  </div>
+                </div>
+
+                <div ng-if="sonda.termsAccepted === false" class= "label label-danger">La sonda no está registrada</div>
+
+              </div>
+            </div>
+          </div>
+
+          <!--En la segunda ventana mostramos una vista mas detallada de las sondas-->
+          <div class="panel" ng-show="tab===2">
+            <!--Esta vista tendran tambien varios filtros -->
+            <div class="hchild" id="selectors">
+              <div>&nbsp;</div>
+              <span style="font-size:14pt;font-family:Verdana, Helvetica">Filtrar por...</span>
+              <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtros2" ng-model="filtroSeleccionado2" ng-change="filtroGlobal()" class="js-example-basic-single">
+              </select>
+
+              &nbsp;&nbsp;
+
+              <span style="font-size:14pt;font-family:Verdana, Helvetica">Filtrar por Campaña</span>
+              <select style="font-size:12pt;font-family:Verdana, Helvetica" ng-options="opt.value as opt.descripcion for opt in filtrosCampana" ng-model="filtroSeleccionadoCampana" ng-change="filtroGlobal()" class="js-example-basic-single">
+              </select>
+              <div>&nbsp;</div>
+
+              <input style="font-size:12pt;font-family:Verdana, Helvetica"  type="text" placeholder="Buscar por..." ng-model="searchText" ng-change="cambioTexto()">
+              <div>&nbsp;</div>
+
+            </div>
+
+            <div ng-repeat="ping in ping3 | filter:filtroPersonal">
+              <div id="tabla" class="table table-hover" layout-align="start end">
+                <table style="width:100%">
+                  <thead>
+                    <tr>
+                      <th rowspan="2" bgcolor="CFCFCF" style="text-align:center">Informacion general</th>
+                      <th rowspan="2" bgcolor="CFCFCF" style="text-align:center">Estado del Sistema</th>
+                      <th colspan="8" bgcolor="CFCFCF" style="text-align:center">Módems de datos</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr>
+                      <!--Primera columna de informacion general-->
+                      <td rowspan="2">
+                        <div>
+                          <strong>Id Sonda:</strong><a ng-href="http://medux.caseonit.net/test_analysis.html?probe={{ping.id_sonda}}&fijo=1" target="_blank"> {{ping.id_sonda}}
+                          <a id="update" href="#"><img src="assets/img/update.png" alt="Update Icon" style="float:rigth;width:20px;height:20px;" ng-click="reiniciarSonda(sonda.id_sonda)"></a>
+                          <!--<a id="reset" href="#"><img src="assets/img/reiniciar.png" alt="Reset Icon" style="float:rigth;margin-right:-10px;width:20px;height:20px;" ng-click="actualizarSonda()"></a>-->
+                        </div>
+                        <div>&nbsp;</div>
+                        <strong>Campaña: </strong>{{ping.campana}}
+                        <div>&nbsp;</div>
+                        <strong>SW Version: </strong> {{ping.version}}
+                        <div>&nbsp;</div>
+                        <strong>Último ping insertado: </strong>{{ping.ts | date: 'medium'}}
+                        <div>&nbsp;</div>
+                        <strong>VPN: </strong>{{ping.control[0].ip}}
+                        <div>&nbsp;</div>
+                        <strong>IP Publica: </strong>{{ping.public_ip}}
+                        <div>&nbsp;</div>
+                        <strong>Fecha configuración:</strong> {{ping.config_date | date : 'medium'}}
+
+                      </td>
+
+                      <!--Segunda columna de Estado del sistema-->
+                      <td rowspan="2">
+                        <div>&nbsp;</div>
+                        <!--Solo aparecera la info de gps no conectado si su variable esta a cero. Aparecera en rojo style="color:red"-->
+                        <div ng-if="ping.gpson===0" class= "label label-danger" align="center" >
+                            ¡GPS NO CONECTADO!
+                        </div>
+                        <div>&nbsp;</div>
+                        <strong>Temperatura: </strong>{{ping.nucleo1temp}}°C y {{ping.nucleo2temp}}°C
+                        <!--Si la temperatura es mayor de 48 grados anunciamos que esta caliente la sonda-->
+                        <div ng-if="ping.nucleo1temp>=48" align="center"><strong>¡¡CALIENTE!!</strong></div>
+                        <div>&nbsp;</div>
+                        <strong>Tiempo de ejecución:</strong> {{ping.howlong_s | secondsToDateTime | date:'HH:mm'}}
+                        <div>&nbsp;</div>
+                        <strong>% CPU: </strong><div>&nbsp;</div>
+                          &nbsp;&nbsp;last 1 min: {{ping.cpu1min*100 | number: 2}} %<div>&nbsp;</div>
+                          &nbsp;&nbsp;last 5 min: {{ping.cpu5min*100 | number: 2}} %<div>&nbsp;</div>
+                          &nbsp;&nbsp;last 15 min: {{ping.cpu15min*100 | number: 2}} %
+                        <div>&nbsp;</div>
+                        <strong>Uso de memoria: </strong>{{ping.usomemoria | limitTo: 2}} min
+                        <div>&nbsp;</div>
+                        <!--Los resultados que faltan por enviar solo apareceran si son distintos de cero-->
+                        <div ng-if="ping.send_delayed_resultados!=0">
+                        <strong>Resultados por enviar: </strong>{{ping.send_delayed_resultados}}</div>
+                        <div>&nbsp;</div>
+                      </td>
+
+                      <!--Tercera columna del modem de datos-->
+                      <td style="height: 0px;">
+                        <table style="width:100%;height:100%;">
+                          <thead>
+                            <tr>
+                                <th bgcolor="DFDFDF" style="text-align:center">Interfaz</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">Estado</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">Operador</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">Tech</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">SubTech</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">IP</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">Estado Prueba</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">Prueba</th>
+                                <th bgcolor="DFDFDF" style="text-align:center">RSSI</th>
+                              </tr>
+                          </thead>
+                          <tr style="text-align:center">
+                            <td>{{ping.radioParams[0].device}}</td>
+                            <td>{{ping.radioParams[0].status}}</td>
+                            <td>{{ping.radioParams[0].provider}}</td>
+                            <td>{{ping.radioParams[0].technology}}</td>
+                            <td>{{ping.radioParams[0].subtechnology}}</td>
+                            <td>{{ping.radioParams[0].ip}}</td>
+                            <td>{{ping.pruebas.modems.eth0.status}}</td>
+                            <td>{{ping.pruebas.modems.eth0.prueba}}</td>
+                            <td>{{ping.radioParams[0].rssi}}</td>
+                          </tr>
+                          <tr style="text-align:center">
+                            <td>{{ping.radioParams[1].device}}</td>
+                            <td>{{ping.radioParams[1].status}}</td>
+                            <td>{{ping.radioParams[1].provider}}</td>
+                            <td>{{ping.radioParams[1].technology}}</td>
+                            <td>{{ping.radioParams[1].subtechnology}}</td>
+                            <td>{{ping.radioParams[1].ip}}</td>
+                            <td>{{ping.pruebas.modems.wlan0.status}}</td>
+                            <td>{{ping.pruebas.modems.wlan0.prueba}}</td>
+                            <td>{{ping.radioParams[1].rssi}}</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+          <!--En la tercera pestaña mostramos el mapa de Google para poder localizar las sondas visualmente-->
+          <div class="panel" ng-if="tab===3">
+            <my-maps id="map-canvas"></my-maps>
+          </div>
+      </section>
+    </div>
+  </div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.12/angular.min.js"></script>
+<!--ng-csv-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ng-csv/0.3.6/ng-csv.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0-beta.2/angular-sanitize.min.js"></script>
+<!--GOOGLE MAPS API-->
+<script  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgukb4UKjToS0ldoPmJPZ3Ebxg_CdXKUk"></script>
+<!-- <script type="text/javascript" src="https://google-maps-utility-library-v3.googlecode.com/svn/trunk/markerclusterer/src/markerclusterer.js"></script>-->
+<script type="text/javascript" src="./script/markerclusterer.js"></script>
+
+<script type="text/javascript" src="http://www.google.com/jsapi?ext.js"></script>
+
+<script src="js/app.js"></script>
+<script src="js/addCtrl.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  google.load('visualization', '1', {packages: ['corechart']});
+
+</script>
+</body>
+
+</html>
